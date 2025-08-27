@@ -372,7 +372,13 @@ public class PushHandler {
         }
     }
 
-    void connectionLost(AtmosphereResourceEvent event) {
+    public enum ConnectionLostReason {
+        ON_STATE_CHANGE,
+        ON_DISCONNECT,
+        ON_THROWABLE;
+    }
+
+    void connectionLost(AtmosphereResourceEvent event, ConnectionLostReason reason) {
         /*
          * There are two ways being called here: one is from
          * VaadinService:handleRequest (via several interim calls), another is
@@ -383,6 +389,7 @@ public class PushHandler {
          * the second case "clear" should be done here otherwise instances will
          * stay in the threads.
          */
+        reportConnectionLost(event, reason);
         boolean needsClear = VaadinSession.getCurrent() == null;
         try {
             handleConnectionLost(event);
@@ -391,6 +398,11 @@ public class PushHandler {
                 CurrentInstance.clearAll();
             }
         }
+    }
+
+    protected void reportConnectionLost(AtmosphereResourceEvent event, ConnectionLostReason reason) {
+        // Default: Do nothing
+        // You can maybe call a logger here or increment some metrics or something else if you want to
     }
 
     private VaadinSession handleConnectionLost(AtmosphereResourceEvent event) {

@@ -59,7 +59,7 @@ public class PushAtmosphereHandler extends AbstractReflectorAtmosphereHandler
         }
 
         if (event.isCancelled() || event.isResumedOnTimeout()) {
-            pushHandler.connectionLost(event);
+            pushHandler.connectionLost(event, PushHandler.ConnectionLostReason.ON_STATE_CHANGE);
         }
     }
 
@@ -98,26 +98,31 @@ public class PushAtmosphereHandler extends AbstractReflectorAtmosphereHandler
      *            the resource which was connected
      */
     private void onConnect(AtmosphereResource resource) {
-        resource.addEventListener(new AtmosphereResourceListener());
+        resource.addEventListener(new AtmosphereResourceListener(pushHandler));
 
         pushHandler.onConnect(resource);
     }
 
-    private class AtmosphereResourceListener extends
+    static class AtmosphereResourceListener extends
             AtmosphereResourceEventListenerAdapter implements Serializable {
+
+        private final PushHandler pushHandler;
+
+        public AtmosphereResourceListener(PushHandler pushHandler) {
+            this.pushHandler = pushHandler;
+        }
 
         @Override
         public void onDisconnect(AtmosphereResourceEvent event) {
             // Log event on trace level
             super.onDisconnect(event);
-            pushHandler.connectionLost(event);
+            pushHandler.connectionLost(event, PushHandler.ConnectionLostReason.ON_DISCONNECT);
         }
 
         @Override
         public void onThrowable(AtmosphereResourceEvent event) {
-            getLogger().error("Exception in push connection",
-                    event.throwable());
-            pushHandler.connectionLost(event);
+            super.onThrowable(event);
+            pushHandler.connectionLost(event, PushHandler.ConnectionLostReason.ON_THROWABLE);
         }
     }
 }
